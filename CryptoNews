@@ -1,0 +1,55 @@
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import requests
+
+# Telegram Bot Token
+TOKEN = 'your_telegram_bot_token'
+
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="Welcome to CryptoNewsBot! Type /help to see available commands.")
+
+def help(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="CryptoNewsBot Commands:\n/news - Get the latest cryptocurrency news\n/price <cryptocurrency> - Get the current price of a cryptocurrency")
+
+def news(update, context):
+    # Fetch latest news articles from an API
+    news_api_url = 'https://api.yournewsapi.com'
+    response = requests.get(news_api_url)
+    news_articles = response.json()
+
+    # Send news articles to user
+    for article in news_articles:
+        context.bot.send_message(chat_id=update.effective_chat.id, text=f"{article['title']}\n{article['url']}")
+
+def price(update, context):
+    # Get cryptocurrency from user input
+    crypto = context.args[0].upper()
+
+    # Fetch current price of the cryptocurrency from an API
+    price_api_url = f'https://api.yourpriceapi.com/{crypto}'
+    response = requests.get(price_api_url)
+    price_data = response.json()
+
+    # Send price data to user
+    context.bot.send_message(chat_id=update.effective_chat.id, text=f"The current price of {crypto} is {price_data['price']}")
+
+def echo(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="I'm sorry, I didn't understand that command. Type /help to see available commands.")
+
+def main():
+    updater = Updater(token=TOKEN, use_context=True)
+    dispatcher = updater.dispatcher
+
+    # Command handlers
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CommandHandler("help", help))
+    dispatcher.add_handler(CommandHandler("news", news))
+    dispatcher.add_handler(CommandHandler("price", price))
+    
+    # Message handler for unrecognized commands
+    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
+
+    updater.start_polling()
+    updater.idle()
+
+if __name__ == '__main__':
+    main()
